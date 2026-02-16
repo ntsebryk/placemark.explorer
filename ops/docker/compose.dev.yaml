@@ -1,0 +1,12 @@
+services:
+  places-service:
+    volumes:
+      - ../../services/places-service:/app
+
+  svc-core:
+    volumes:
+      - ../../services/svc-core:/app
+
+  web:
+    volumes:
+      - ../../frontend/web:/app

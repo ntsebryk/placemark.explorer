@@ -1,37 +1,35 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
 .vscode/
+
+# Env files
+.env
+**/.env
+
+# Build artifacts
+**/build/
+**/dist/
+**/out/
+**/target/
+**/bin/
+
+# Java / Gradle
+**/.gradle/
+!**/gradle/wrapper/gradle-wrapper.jar
+
+# Node
+**/node_modules/
+
+# Python
+**/__pycache__/
+**/.pytest_cache/
+
+# Logs
+*.log
+
+# Terraform
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*

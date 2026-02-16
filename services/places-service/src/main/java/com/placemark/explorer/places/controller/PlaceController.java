@@ -1,0 +1,103 @@
+package com.placemark.explorer.places.controller;
+
+import com.placemark.explorer.places.domain.PlaceCategory;
+import com.placemark.explorer.places.dto.place.CreatePlaceRequest;
+import com.placemark.explorer.places.dto.place.PlaceResponse;
+import com.placemark.explorer.places.dto.place.TrackIntersectionRequest;
+import com.placemark.explorer.places.mapper.PlaceMapper;
+import com.placemark.explorer.places.service.PlaceService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
+import org.locationtech.jts.geom.Point;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+
+@RestController
+@RequestMapping("/api/v1/places")
+@Tag(name = "Places")
+@Validated
+public class PlaceController {
+
+  private final PlaceService placeService;
+  private final PlaceMapper mapper;
+
+  public PlaceController(PlaceService placeService, PlaceMapper mapper) {
+    this.placeService = placeService;
+    this.mapper = mapper;
+  }
+
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(summary = "Create place")
+  public PlaceResponse createPlace(@Valid @RequestBody CreatePlaceRequest request) {
+    return mapper.toResponse(placeService.createPlace(request));
+  }
+
+  @GetMapping("/{id}")
+  @Operation(summary = "Get place by ID")
+  public PlaceResponse getPlace(@PathVariable UUID id) {
+    return mapper.toResponse(placeService.getPlace(id));
+  }
+
+  @GetMapping
+  @Operation(summary = "List places with optional category filter")
+  public Page<PlaceResponse> listPlaces(
+      @RequestParam(required = false) PlaceCategory category,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    return placeService.listPlaces(category, pageable).map(mapper::toResponse);
+  }
+
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Soft delete place")
+  public void deletePlace(@PathVariable UUID id) {
+    placeService.deletePlace(id);
+  }
+
+  @GetMapping("/near")
+  @Operation(summary = "Find places near a point")
+  public Page<PlaceResponse> findPlacesNear(
+      @RequestParam @Min(-90) @Max(90) double lat,
+      @RequestParam @Min(-180) @Max(180) double lon,
+      @RequestParam @Positive int radiusMeters,
+      @RequestParam(required = false) PlaceCategory category,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    return placeService.findPlacesNear(lat, lon, radiusMeters, category, pageable).map(mapper::toResponse);
+  }
+
+  @PostMapping("/intersections")
+  @Operation(summary = "Find places intersecting a GPS track")
+  public Page<PlaceResponse> findPlacesIntersectingTrack(
+      @Valid @RequestBody TrackIntersectionRequest request,
+      @RequestParam(required = false) PlaceCategory category,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+    List<Point> track = request.points().stream()
+        .map(p -> placeService.toPoint(p.latitude(), p.longitude()))
+        .toList();
+    Pageable pageable = PageRequest.of(page, size);
+    return placeService.findPlacesIntersectingTrack(track, category, pageable).map(mapper::toResponse);
+  }
+}

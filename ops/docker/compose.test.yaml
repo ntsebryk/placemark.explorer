@@ -1,8 +1,4 @@
 services:
-  svc-core:
-    environment:
-      ENVIRONMENT: test
-
   web:
     environment:
       ENVIRONMENT: test

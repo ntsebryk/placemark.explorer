@@ -24,15 +24,6 @@ services:
     depends_on:
       - places-db
 
-  svc-core:
-    build:
-      context: ../../services/svc-core
-      dockerfile: Dockerfile
-    env_file:
-      - ../../services/svc-core/.env.example
-    ports:
-      - "8080:8080"
-
   web:
     build:
       context: ../../frontend/web
@@ -41,5 +32,3 @@ services:
       - ../../frontend/web/.env.example
     ports:
       - "3000:3000"
-    depends_on:
-      - svc-core

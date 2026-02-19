@@ -1,7 +1,7 @@
-# Placeholder Dockerfile for web frontend.
-# Replace with framework-specific build steps.
 FROM node:22-alpine
 WORKDIR /app
-COPY . .
+COPY package*.json ./
+RUN npm install
+COPY . ./
 EXPOSE 3000
-CMD ["sh", "-c", "echo Replace Dockerfile steps for frontend/web && sleep infinity"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

@@ -7,6 +7,7 @@ import com.placemark.explorer.places.service.PlaceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.transaction.Transactional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,6 +30,7 @@ import jakarta.validation.constraints.Min;
 @RequestMapping("/api/v1/groups")
 @Tag(name = "Groups")
 @Validated
+@Transactional(Transactional.TxType.SUPPORTS)
 public class PlaceGroupController {
 
   private final PlaceService placeService;
@@ -42,41 +44,45 @@ public class PlaceGroupController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Create group")
+  @Transactional
   public PlaceGroupResponse createGroup(@Valid @RequestBody CreateGroupRequest request) {
     return mapper.toResponse(placeService.createGroup(request));
   }
 
   @GetMapping("/{id}")
   @Operation(summary = "Get group by ID")
-  public PlaceGroupResponse getGroup(@PathVariable UUID id) {
+  public PlaceGroupResponse getGroup(@PathVariable("id") UUID id) {
     return mapper.toResponse(placeService.getGroup(id));
   }
 
   @GetMapping
   @Operation(summary = "List groups")
   public Page<PlaceGroupResponse> listGroups(
-      @RequestParam(defaultValue = "0") @Min(0) int page,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+      @RequestParam(name = "page", defaultValue = "0") @Min(0) int page,
+      @RequestParam(name = "size", defaultValue = "20") @Min(1) @Max(100) int size) {
     Pageable pageable = PageRequest.of(page, size);
     return placeService.listGroups(pageable).map(mapper::toResponse);
   }
 
   @PostMapping("/{groupId}/places/{placeId}")
   @Operation(summary = "Add place to group")
-  public PlaceGroupResponse addPlaceToGroup(@PathVariable UUID groupId, @PathVariable UUID placeId) {
+  @Transactional
+  public PlaceGroupResponse addPlaceToGroup(@PathVariable("groupId") UUID groupId, @PathVariable("placeId") UUID placeId) {
     return mapper.toResponse(placeService.addPlaceToGroup(groupId, placeId));
   }
 
   @DeleteMapping("/{groupId}/places/{placeId}")
   @Operation(summary = "Remove place from group")
-  public PlaceGroupResponse removePlaceFromGroup(@PathVariable UUID groupId, @PathVariable UUID placeId) {
+  @Transactional
+  public PlaceGroupResponse removePlaceFromGroup(@PathVariable("groupId") UUID groupId, @PathVariable("placeId") UUID placeId) {
     return mapper.toResponse(placeService.removePlaceFromGroup(groupId, placeId));
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   @Operation(summary = "Soft delete group")
-  public void deleteGroup(@PathVariable UUID id) {
+  @Transactional
+  public void deleteGroup(@PathVariable("id") UUID id) {
     placeService.deleteGroup(id);
   }
 }

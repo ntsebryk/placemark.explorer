@@ -40,18 +40,24 @@ public class PlaceService {
     place.setCategory(request.category());
     place.setVisitRadiusMeters(request.visitRadiusMeters());
     place.setLocation(toPoint(request.latitude(), request.longitude()));
-    return placeRepository.save(place);
+    return initializePlace(placeRepository.save(place));
   }
 
   public Place getPlace(UUID id) {
-    return placeRepository.findById(id).orElseThrow(() -> new NotFoundException("Place not found: " + id));
+    Place place = placeRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Place not found: " + id));
+    return initializePlace(place);
   }
 
   public Page<Place> listPlaces(PlaceCategory category, Pageable pageable) {
+    Page<Place> places;
     if (category == null) {
-      return placeRepository.findAll(pageable);
+      places = placeRepository.findAll(pageable);
+    } else {
+      places = placeRepository.findByCategory(category, pageable);
     }
-    return placeRepository.findByCategory(category, pageable);
+    places.getContent().forEach(this::initializePlace);
+    return places;
   }
 
   public void deletePlace(UUID id) {
@@ -63,15 +69,19 @@ public class PlaceService {
     PlaceGroup group = new PlaceGroup();
     group.setName(request.name());
     group.setDescription(request.description());
-    return groupRepository.save(group);
+    return initializeGroup(groupRepository.save(group));
   }
 
   public PlaceGroup getGroup(UUID id) {
-    return groupRepository.findById(id).orElseThrow(() -> new NotFoundException("Group not found: " + id));
+    PlaceGroup group = groupRepository.findById(id)
+        .orElseThrow(() -> new NotFoundException("Group not found: " + id));
+    return initializeGroup(group);
   }
 
   public Page<PlaceGroup> listGroups(Pageable pageable) {
-    return groupRepository.findAll(pageable);
+    Page<PlaceGroup> groups = groupRepository.findAll(pageable);
+    groups.getContent().forEach(this::initializeGroup);
+    return groups;
   }
 
   public void deleteGroup(UUID id) {
@@ -84,7 +94,7 @@ public class PlaceService {
     Place place = getPlace(placeId);
     group.getPlaces().add(place);
     place.getGroups().add(group);
-    return group;
+    return initializeGroup(group);
   }
 
   public PlaceGroup removePlaceFromGroup(UUID groupId, UUID placeId) {
@@ -92,12 +102,15 @@ public class PlaceService {
     Place place = getPlace(placeId);
     group.getPlaces().remove(place);
     place.getGroups().remove(group);
-    return group;
+    return initializeGroup(group);
   }
 
   public Page<Place> findPlacesNear(double lat, double lon, int radiusMeters, PlaceCategory category, Pageable pageable) {
     validateRadius(radiusMeters);
-    return placeRepository.findPlacesNear(lat, lon, radiusMeters, category != null ? category.name() : null, pageable);
+    Page<Place> places = placeRepository.findPlacesNear(
+        lat, lon, radiusMeters, category != null ? category.name() : null, pageable);
+    places.getContent().forEach(this::initializePlace);
+    return places;
   }
 
   public Page<Place> findPlacesIntersectingTrack(List<Point> trackPoints, PlaceCategory category, Pageable pageable) {
@@ -106,7 +119,10 @@ public class PlaceService {
     }
 
     String wkt = toTrackWkt(trackPoints);
-    return placeRepository.findPlacesIntersectingTrack(wkt, category != null ? category.name() : null, pageable);
+    Page<Place> places = placeRepository.findPlacesIntersectingTrack(
+        wkt, category != null ? category.name() : null, pageable);
+    places.getContent().forEach(this::initializePlace);
+    return places;
   }
 
   public Point toPoint(double lat, double lon) {
@@ -135,5 +151,15 @@ public class PlaceService {
     }
     sb.append(')');
     return sb.toString();
+  }
+
+  private Place initializePlace(Place place) {
+    place.getGroups().size();
+    return place;
+  }
+
+  private PlaceGroup initializeGroup(PlaceGroup group) {
+    group.getPlaces().size();
+    return group;
   }
 }
